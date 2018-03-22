@@ -66,31 +66,94 @@
 //
 // Promise in ES6
 
+// $(document).ready(function() {
+//   $('#weatherLocation').click(function() {
+//     let city = $('#location').val();
+//     $('#location').val("");
+//
+//     let promise = new Promise(function(resolve, reject) {
+//       let request = new XMLHttpRequest();
+//       let url = `http://api.openweathermap.org/data/2.5/weather?q=${city}&appid=cf6ba3f84b8d27dd70d0d6241554a556`;
+//       request.onload = function() {
+//         if (this.status === 200) {
+//           resolve(request.response);
+//         } else {
+//           reject(Error(request.statusText));
+//         }
+//       }
+//       request.open("GET", url, true);
+//       request.send();
+//     });
+//
+//     promise.then(function(response) {
+//       body = JSON.parse(response);
+//       $('.showHumidity').text(`The humidity in ${city} is ${body.main.humidity}%`);
+//       $('.showTemp').text(`The temperature in Kelvins is ${body.main.temp} degrees.`);
+//     }, function(error) {
+//       $('.showErrors').text(`There was an error processing your request: ${error.message}`);
+//     });
+//   });
+// });
+
+// Chaining Promises
+
+let weatherKey = 'cf6ba3f84b8d27dd70d0d6241554a556';
+let giphyKey = 'zYM2ZvSaitJLBp1oS1W4nqdjR2O7Cioc';
+
 $(document).ready(function() {
   $('#weatherLocation').click(function() {
     let city = $('#location').val();
     $('#location').val("");
 
-    let promise = new Promise(function(resolve, reject) {
-      let request = new XMLHttpRequest();
-      let url = `http://api.openweathermap.org/data/2.5/weather?q=${city}&appid=cf6ba3f84b8d27dd70d0d6241554a556`;
-      request.onload = function() {
-        if (this.status === 200) {
-          resolve(request.response);
-        } else {
-          reject(Error(request.statusText));
-        }
-      }
-      request.open("GET", url, true);
-      request.send();
-    });
+    function weatherCall() {
+      return new Promise(function(resolve, reject) {
+        let request = new XMLHttpRequest();
+        let url = `http://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${weatherKey}`;
 
-    promise.then(function(response) {
-      body = JSON.parse(response);
+        request.onload = function() {
+          if (this.status === 200) {
+            resolve(request.response);
+          } else {
+            reject(Error(request.statusText));
+          }
+        }
+
+        request.open("GET", url, true);
+        request.send();
+      });
+    }
+
+    function giphyCall(humidity) {
+      return new Promise(function(resolve, reject) {
+        let request = new XMLHttpRequest();
+        let url = `http://api.giphy.com/v1/gifs/search?q=${humidity}&api_key=${giphyKey}&limit=5`
+
+        request.onload = function() {
+          if (this.status === 200) {
+            resolve(request.response);
+          } else {
+            reject(Error(request.statusText));
+          }
+        }
+
+        request.open("GET", url, true);
+        request.send();
+      });
+    }
+
+    weatherCall()
+    .then(function(response) {
+      let body = JSON.parse(response);
+      let humidity = body.main.humidity;
       $('.showHumidity').text(`The humidity in ${city} is ${body.main.humidity}%`);
       $('.showTemp').text(`The temperature in Kelvins is ${body.main.temp} degrees.`);
-    }, function(error) {
-      $('.showErrors').text(`There was an error processing your request: ${error.message}`);
+      return giphyCall(humidity);
+    })
+    .then(function(response) {
+      let giphyResponse = JSON.parse(response);
+      let image = giphyResponse["data"][0]["images"]["downsized"]["url"];
+      $('.showImage').html(`<img src='${image}'>`);
+
     });
   });
 });
